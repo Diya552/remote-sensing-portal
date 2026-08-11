@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: remote-sensing-postgres
+    environment:
+      POSTGRES_USER: remote_user
+      POSTGRES_PASSWORD: remote_password
+      POSTGRES_DB: remote_sensing
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - remote-sensing-network
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:6
+    container_name: remote-sensing-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: remote_user
+      MONGO_INITDB_ROOT_PASSWORD: remote_password
+      MONGO_INITDB_DATABASE: remote_sensing
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - remote-sensing-network
+
+  # Python Flask Backend
+  backend-python:
+    build:
+      context: ./backend-python
+      dockerfile: Dockerfile
+    container_name: remote-sensing-backend-python
+    ports:
+      - "5000:5000"
+    environment:
+      FLASK_ENV: development
+      DATABASE_URL: postgresql://remote_user:remote_password@postgres:5432/remote_sensing
+      MONGODB_URL: mongodb://remote_user:remote_password@mongodb:27017/remote_sensing
+    depends_on:
+      - postgres
+      - mongodb
+    volumes:
+      - ./backend-python:/app
+    networks:
+      - remote-sensing-network
+
+  # Node.js Express Backend (alternative)
+  backend-nodejs:
+    build:
+      context: ./backend-nodejs
+      dockerfile: Dockerfile
+    container_name: remote-sensing-backend-nodejs
+    ports:
+      - "5001:5000"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://remote_user:remote_password@postgres:5432/remote_sensing
+      MONGODB_URL: mongodb://remote_user:remote_password@mongodb:27017/remote_sensing
+    depends_on:
+      - postgres
+      - mongodb
+    volumes:
+      - ./backend-nodejs:/app
+    networks:
+      - remote-sensing-network
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: remote-sensing-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_URL: http://localhost:5000
+    depends_on:
+      - backend-python
+    volumes:
+      - ./frontend:/app
+    networks:
+      - remote-sensing-network
+
+volumes:
+  postgres_data:
+  mongodb_data:
+
+networks:
+  remote-sensing-network:
+    driver: bridge

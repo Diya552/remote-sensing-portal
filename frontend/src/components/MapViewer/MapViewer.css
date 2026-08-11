@@ -1,0 +1,18 @@
+.map-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.map-viewer h1 {
+  padding: 20px;
+  background-color: #333;
+  color: white;
+  margin: 0;
+  z-index: 10;
+}
+
+.leaflet-container {
+  flex: 1;
+}
